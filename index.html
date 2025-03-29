@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Editor de Cartas - RPG WebAR</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .formulario {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            margin: 20px auto;
+        }
+
+        .formulario input[type="file"], .formulario input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #555;
+        }
+
+        .formulario button {
+            width: 100%;
+            padding: 10px;
+            background-color: #444;
+            border: 1px solid #fff;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .formulario button:hover {
+            background-color: #555;
+        }
+
+        .codigoGerado {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #ffcc00;
+            font-family: "Courier New", Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="formulario">
+        <label for="imagemCarta">Imagem da Carta:</label>
+        <input type="file" id="imagemCarta" accept="image/*">
+
+        <label for="modelo3D">Modelo 3D da Carta (GLTF):</label>
+        <input type="file" id="modelo3D" accept=".gltf,.glb">
+
+        <label for="marcador">Marcador (PATTERN):</label>
+        <input type="file" id="marcador" accept=".patt">
+
+        <label for="nomeCarta">Nome da Carta:</label>
+        <input type="text" id="nomeCarta" placeholder="Nome da carta">
+
+        <button type="button" onclick="adicionarCarta()">Adicionar Carta</button>
+    </div>
+
+    <div class="codigoGerado" id="codigoGerado"></div>
+
+    <script>
+        let cartas = [];
+
+        // Função para adicionar uma carta ao array
+        function adicionarCarta() {
+            const imagemCarta = document.getElementById('imagemCarta').files[0];
+            const modelo3D = document.getElementById('modelo3D').files[0];
+            const marcador = document.getElementById('marcador').files[0];
+            const nomeCarta = document.getElementById('nomeCarta').value;
+
+            if (!imagemCarta || !modelo3D || !marcador || !nomeCarta) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+
+            const imagemURL = URL.createObjectURL(imagemCarta);
+            const modelo3DURL = URL.createObjectURL(modelo3D);
+            const marcadorURL = URL.createObjectURL(marcador);
+
+            cartas.push({
+                nome: nomeCarta,
+                imagem: imagemURL,
+                modelo3D: modelo3DURL,
+                marcador: marcadorURL
+            });
+
+            gerarCodigo();
+        }
+
+        // Função para gerar o código HTML
+        function gerarCodigo() {
+            let codigoHTML = `
+                <!DOCTYPE html>
+                <html lang="pt">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+                    <title>RPG WebAR</title>
+                    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+                    <script src="https://rawgit.com/jeromeetienne/ar.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
+                    <style>
+                        body { margin: 0; overflow: hidden; }
+                        .imagemCarta { display: none; }
+                    </style>
+                </head>
+                <body>
+                    <button id="fixarCarta"><img src="pin.png" alt="Fixar Carta" /></button>
+                    <button id="limparCarta"><img src="back.png" alt="Limpar Carta" /></button>
+                    <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+            `;
+
+            cartas.forEach((carta, index) => {
+                codigoHTML += `
+                    <a-marker type="pattern" url="${carta.marcador}" id="marker${index + 1}">
+                        <a-entity id="carta3D_${index + 1}" position="0 0 0" scale="0.5 0.5 0.5">
+                            <a-gltf-model src="${carta.modelo3D}" position="0 0 0"></a-gltf-model>
+                        </a-entity>
+                    </a-marker>
+                    <img id="imagemCarta${index + 1}" class="imagemCarta" src="${carta.imagem}" alt="${carta.nome}" />
+                `;
+            });
+
+            codigoHTML += `
+                    <a-entity camera></a-entity>
+                    </a-scene>
+                </body>
+                </html>
+            `;
+
+            document.getElementById('codigoGerado').textContent = codigoHTML;
+        }
+    </script>
+
+</body>
+</html>
